@@ -25,8 +25,8 @@ main : Html msg
 main =
     div []
         [ -- provide both light and dark themes globally
-            -- SystemStrategy will use the user's system settings
-            ThemeProvider.globalProviderWithDarkMode
+          -- SystemStrategy will use the user's system settings
+          ThemeProvider.globalProviderWithDarkMode
             { light = lightTheme
             , dark = darkTheme
             , strategy = ThemeProvider.SystemStrategy
