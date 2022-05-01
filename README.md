@@ -4,6 +4,7 @@ This package is used for creating "themes" based on CSS variables and propagatin
 
 You can pick one of the themes from [elm-theme-spec](https://package.elm-lang.org/packages/uncover-co/elm-theme-spec/latest/) or you can define your own like so:
 
+```elm
     lightTheme : Theme
     lightTheme =
         Theme.fromList "my-theme"
@@ -37,3 +38,4 @@ You can pick one of the themes from [elm-theme-spec](https://package.elm-lang.or
             -- section using an scoped theme
             , ThemeProvider.provider specialTheme [] [ .. ]
             ]
+```
