@@ -1,0 +1,16 @@
+{
+    "type": "package",
+    "name": "uncover-co/elm-theme-provider",
+    "summary": "Work with scoped themes based on CSS variables with light and dark modes.",
+    "license": "MPL-2.0",
+    "version": "1.0.0",
+    "exposed-modules": [
+        "ThemeProvider"
+    ],
+    "elm-version": "0.19.0 <= v < 0.20.0",
+    "dependencies": {
+        "elm/core": "1.0.0 <= v < 2.0.0",
+        "elm/html": "1.0.0 <= v < 2.0.0"
+    },
+    "test-dependencies": {}
+}

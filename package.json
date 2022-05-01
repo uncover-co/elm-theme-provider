@@ -1,0 +1,15 @@
+{
+  "name": "elm-theme-provider",
+  "version": "1.0.0",
+  "license": "MPL-2.0",
+  "author": "Georges Boris",
+  "description": "Work with scoped themes based on CSS variables with light and dark modes.",
+  "scripts": {
+    "postinstall": "elm-tooling install",
+    "docs": "elm-doc-preview"
+  },
+  "devDependencies": {
+    "elm-doc-preview": "^5.0.5",
+    "elm-tooling": "^1.7.0"
+  }
+}
