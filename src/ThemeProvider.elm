@@ -241,12 +241,12 @@ globalProvider_ props =
                     ClassStrategy darkClass ->
                         H.node "style"
                             []
-                            [ H.text ("." ++ darkClass ++ " { " ++ styles dark ++ " }") ]
+                            [ H.text ("." ++ darkClass ++ " { " ++ styles dark ++ "; color-scheme: dark; }") ]
 
                     SystemStrategy ->
                         H.node "style"
                             []
-                            [ H.text ("@media (prefers-color-scheme: dark) { body { " ++ styles dark ++ " } }") ]
+                            [ H.text ("@media (prefers-color-scheme: dark) { body { " ++ styles dark ++ "; color-scheme: dark; } }") ]
 
             Nothing ->
                 H.text ""
@@ -278,7 +278,7 @@ provider_ props attrs children =
                         (H.node
                             "style"
                             []
-                            [ H.text ("." ++ targetClass ++ " { " ++ styles props.light ++ " } ." ++ darkClass ++ " ." ++ targetClass ++ " { " ++ styles dark ++ " }") ]
+                            [ H.text ("." ++ targetClass ++ " { " ++ styles props.light ++ " } ." ++ darkClass ++ " ." ++ targetClass ++ " { " ++ styles dark ++ "; color-scheme: dark; }") ]
                             :: children
                         )
 
@@ -288,7 +288,7 @@ provider_ props attrs children =
                         (H.node
                             "style"
                             []
-                            [ H.text ("." ++ targetClass ++ " { " ++ styles props.light ++ " } @media (prefers-color-scheme: dark) { ." ++ targetClass ++ " { " ++ styles dark ++ " } }") ]
+                            [ H.text ("." ++ targetClass ++ " { " ++ styles props.light ++ " } @media (prefers-color-scheme: dark) { ." ++ targetClass ++ " { " ++ styles dark ++ "; color-scheme: dark; } }") ]
                             :: children
                         )
 
