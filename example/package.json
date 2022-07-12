@@ -1,0 +1,13 @@
+{
+  "name": "example",
+  "scripts": {
+    "postinstall": "elm-tooling install",
+    "start": "elm-book src/Main.elm"
+  },
+  "author": "Georges Boris",
+  "license": "ISC",
+  "devDependencies": {
+    "elm-book": "^1.0.1",
+    "elm-tooling": "^1.8.0"
+  }
+}

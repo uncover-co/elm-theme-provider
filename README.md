@@ -7,7 +7,7 @@ You can pick one of the themes from [elm-theme-spec](https://package.elm-lang.or
 ```elm
 lightTheme : Theme
 lightTheme =
-    Theme.fromList "my-theme"
+    ThemeProvider.fromList 
         [ ( "background", "white"
         , ( "accent", "blue" )
         ]
@@ -15,7 +15,7 @@ lightTheme =
 
 darkTheme : Theme
 darkTheme =
-    Theme.fromList "my-theme"
+    ThemeProvider.fromList 
         [ ( "background", "black"
         , ( "accent", "blue" )
         ]

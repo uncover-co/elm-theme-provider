@@ -3,7 +3,7 @@
     "name": "uncover-co/elm-theme-provider",
     "summary": "Work with scoped themes based on CSS variables with light and dark modes.",
     "license": "MPL-2.0",
-    "version": "1.0.1",
+    "version": "2.0.0",
     "exposed-modules": [
         "ThemeProvider"
     ],

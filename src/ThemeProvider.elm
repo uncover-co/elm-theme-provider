@@ -4,6 +4,7 @@ module ThemeProvider exposing
     , provider
     , DarkModeStrategy(..)
     , globalProviderWithDarkMode, providerWithDarkMode
+    , optimizedTheme, optimizedThemeWithDarkMode, OptimizedTheme
     )
 
 {-|
@@ -35,6 +36,15 @@ You can also use two similar functions as the ones above for specifying themes t
 
 @docs globalProviderWithDarkMode, providerWithDarkMode
 
+
+# Optimized Themes
+
+If you're heavily using theme providers across your application, you're probably reusing the same themes over and over.
+
+For those scenarios, otimized themes can be used to decouple the styles from the provider element so styles are only inserted once, even if the provider is being used at various locations.
+
+@docs optimizedTheme, optimizedThemeWithDarkMode, OptimizedTheme
+
 -}
 
 import Html as H
@@ -48,43 +58,31 @@ import Internal.Hash
 
 {-| -}
 type Theme
-    = Theme { namespace : String, styles : String }
+    = Theme String
 
 
-{-| Creates a theme based on a namespace and a list of CSS variables names and their values.
+{-| Creates a theme based on a list of CSS variables names and their values.
 
     lightTheme : Theme
     lightTheme =
-        Theme.fromList "my-theme"
+        Theme.fromList
             [ ( "background", "white"
             , ( "base", "black" )
             , ( "accent", "blue" )
             ]
 
-**A Theme is just a set of scoped CSS variables** so the namespace attribute can be used to avoid name-clashing with other variables already in scope.
-
 -}
-fromList : String -> List ( String, String ) -> Theme
-fromList namespace_ list =
+fromList : List ( String, String ) -> Theme
+fromList list =
     list
-        |> List.map (\( k, v ) -> "--" ++ namespace_ ++ "-" ++ k ++ ":" ++ v)
+        |> List.map (\( k, v ) -> "--" ++ k ++ ":" ++ v)
         |> String.join ";"
-        |> (\styles_ ->
-                Theme
-                    { namespace = namespace_
-                    , styles = styles_
-                    }
-           )
+        |> Theme
 
 
-namespace : Theme -> String
-namespace (Theme theme) =
-    theme.namespace
-
-
-styles : Theme -> String
-styles (Theme theme) =
-    theme.styles
+toString : Theme -> String
+toString (Theme theme) =
+    theme
 
 
 {-| Used to propagate themes to an specific scope.
@@ -107,12 +105,15 @@ provider :
     -> List (H.Attribute msg)
     -> List (H.Html msg)
     -> H.Html msg
-provider theme =
+provider theme attrs children =
     provider_
         { light = theme
         , dark = Nothing
         , strategy = SystemStrategy
         }
+        |> (\data ->
+                data.provider attrs (data.styles :: children)
+           )
 
 
 {-| Used to provide a **Theme** globally. It will be applied to your `body` element and it will be available for use anywhere in your application.
@@ -203,7 +204,50 @@ providerWithDarkMode :
     -> List (H.Attribute msg)
     -> List (H.Html msg)
     -> H.Html msg
-providerWithDarkMode props =
+providerWithDarkMode props attrs children =
+    provider_
+        { light = props.light
+        , dark = Just props.dark
+        , strategy = props.strategy
+        }
+        |> (\data ->
+                data.provider attrs (data.styles :: children)
+           )
+
+
+{-| -}
+type alias OptimizedTheme msg =
+    { styles : H.Html msg
+    , provider : List (H.Attribute msg) -> List (H.Html msg) -> H.Html msg
+    }
+
+
+{-|
+
+    optimizedTheme =
+        optimizedTheme theme
+
+    body []
+        [ myTheme.styles
+        , myTheme.provider []
+            [ ... ]
+        ]
+
+-}
+optimizedTheme : Theme -> OptimizedTheme msg
+optimizedTheme theme =
+    provider_
+        { light = theme
+        , dark = Nothing
+        , strategy = SystemStrategy
+        }
+
+
+{-| -}
+optimizedThemeWithDarkMode :
+    { light : Theme, dark : Theme, strategy : DarkModeStrategy }
+    -> OptimizedTheme msg
+optimizedThemeWithDarkMode props =
     provider_
         { light = props.light
         , dark = Just props.dark
@@ -234,19 +278,19 @@ globalProvider_ props =
     H.div []
         [ H.node "style"
             []
-            [ H.text ("body { " ++ styles props.light ++ " }") ]
+            [ H.text ("body { " ++ toString props.light ++ " }") ]
         , case props.dark of
             Just dark ->
                 case props.strategy of
                     ClassStrategy darkClass ->
                         H.node "style"
                             []
-                            [ H.text ("." ++ darkClass ++ " { " ++ styles dark ++ "; color-scheme: dark; }") ]
+                            [ H.text ("." ++ darkClass ++ " { " ++ toString dark ++ "; color-scheme: dark; }") ]
 
                     SystemStrategy ->
                         H.node "style"
                             []
-                            [ H.text ("@media (prefers-color-scheme: dark) { body { " ++ styles dark ++ "; color-scheme: dark; } }") ]
+                            [ H.text ("@media (prefers-color-scheme: dark) { body { " ++ toString dark ++ "; color-scheme: dark; } }") ]
 
             Nothing ->
                 H.text ""
@@ -258,39 +302,81 @@ provider_ :
     , dark : Maybe Theme
     , strategy : DarkModeStrategy
     }
-    -> List (H.Attribute msg)
-    -> List (H.Html msg)
-    -> H.Html msg
-provider_ props attrs children =
+    ->
+        { styles : H.Html msg
+        , provider : List (H.Attribute msg) -> List (H.Html msg) -> H.Html msg
+        }
+provider_ props =
+    let
+        targetClass : String
+        targetClass =
+            props.dark
+                |> Maybe.map toString
+                |> Maybe.withDefault ""
+                |> (++) (toString props.light)
+                |> hashString
+                |> String.fromInt
+                |> (++) "theme-"
+    in
     case props.dark of
         Just dark ->
-            let
-                targetClass =
-                    dark
-                        |> styles
-                        |> hashString
-                        |> (\hash -> namespace dark ++ "-" ++ String.fromInt hash)
-            in
             case props.strategy of
                 ClassStrategy darkClass ->
-                    H.div
-                        (HA.class targetClass :: attrs)
-                        (H.node
+                    { styles =
+                        H.node
                             "style"
                             []
-                            [ H.text ("." ++ targetClass ++ " { " ++ styles props.light ++ " } ." ++ darkClass ++ " ." ++ targetClass ++ " { " ++ styles dark ++ "; color-scheme: dark; }") ]
-                            :: children
-                        )
+                            [ H.text
+                                ("."
+                                    ++ targetClass
+                                    ++ " { "
+                                    ++ toString props.light
+                                    ++ " } ."
+                                    ++ darkClass
+                                    ++ " ."
+                                    ++ targetClass
+                                    ++ " { "
+                                    ++ toString dark
+                                    ++ "; color-scheme: dark; }"
+                                )
+                            ]
+                    , provider =
+                        \attrs children ->
+                            H.div
+                                (HA.class targetClass :: attrs)
+                                children
+                    }
 
                 SystemStrategy ->
-                    H.div
-                        (HA.class targetClass :: attrs)
-                        (H.node
+                    { styles =
+                        H.node
                             "style"
                             []
-                            [ H.text ("." ++ targetClass ++ " { " ++ styles props.light ++ " } @media (prefers-color-scheme: dark) { ." ++ targetClass ++ " { " ++ styles dark ++ "; color-scheme: dark; } }") ]
-                            :: children
-                        )
+                            [ H.text
+                                ("."
+                                    ++ targetClass
+                                    ++ " { "
+                                    ++ toString props.light
+                                    ++ " } @media (prefers-color-scheme: dark) { ."
+                                    ++ targetClass
+                                    ++ " { "
+                                    ++ toString dark
+                                    ++ "; color-scheme: dark; } }"
+                                )
+                            ]
+                    , provider =
+                        \attrs children ->
+                            H.div
+                                (HA.class targetClass :: attrs)
+                                children
+                    }
 
         Nothing ->
-            H.div (HA.attribute "style" (styles props.light) :: attrs) children
+            { styles =
+                H.node "style"
+                    []
+                    [ H.text ("." ++ targetClass ++ " { " ++ toString props.light ++ " }") ]
+            , provider =
+                \attrs children ->
+                    H.div (HA.class targetClass :: attrs) children
+            }
